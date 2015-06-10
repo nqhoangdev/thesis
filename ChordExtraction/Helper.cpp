@@ -1,7 +1,80 @@
 #include "Helper.h"
 
+using namespace Helper;
+bool Helper::inRange(float x, float left, float right){
+	return x >= left && x <= right;
+}
 
-void appendFeatures(Plugin::FeatureSet &a, const Plugin::FeatureSet &b)
+void Helper::output(bool even, string outputfile, map<float, pair<string, float>> chords, map<float, pair<string, float>> &bars, float avg_tempo){
+	auto bar = bars.begin();
+	ofstream os;
+	os.open(outputfile.c_str());
+	if (even)
+		os << "(meter 4 4)" << endl;
+	else
+		os << "(meter 3 4)" << endl;
+	os << "(tempo " << avg_tempo << ")" << endl;
+	os << "(section (style two-beat))\n";
+	string previousChord = "null";
+	//
+	do {
+		auto chord = chords.begin();
+		string str = "";
+		while (chord != chords.end())
+		{
+			// Check intersect between a bar and a chord
+			float barbegin = bar->first;
+			float barend = bar->first + bar->second.second;
+			float chordbegin = chord->first;
+			float chordend = chord->first + chord->second.second;
+			if (inRange(barbegin, chordbegin, chordend) || inRange(barend, chordbegin, chordend)){
+				float intersect = min(chordend, barend) - max(chordbegin, barbegin);
+				float ratio = intersect / bar->second.second;
+				if (chord->second.first != "N"){
+					string currentChord = chord->second.first;
+					printf("%s ", currentChord.c_str());
+					if (currentChord == previousChord){
+						str += " / ";
+					}
+					else {
+						str = " " + currentChord + " ";
+						previousChord = currentChord;
+					}
+				}
+			}
+			++chord;
+			//
+		}
+		if (str.length() > 0) {
+			bar->second.first = str;
+			os << bar->second.first << " | ";
+		}
+		++bar;
+	} while (bar != bars.end());
+	os.close();
+}
+int Helper::generate(string file){
+	//string p
+	//map: begin time, label, duration
+	map<float, pair<string, float>> chords, bars, barseven, barsodd;
+	float avg_tempo;
+	process(file, chords, barseven, barsodd, avg_tempo);
+	output(true, "even.ls", chords, barseven, avg_tempo);
+	output(false, "odd.ls", chords, barsodd, avg_tempo);
+
+
+	auto bar = barseven.begin();
+	float begin = bar->first;
+	string strbegin = to_string(begin);
+	string cmd("java -jar genAccompaniment.jar even.ls even.mid ");
+	cmd += strbegin + " ";
+	cmd += file;
+	system(cmd.c_str());
+	return 0;
+}
+
+
+void Helper::appendFeatures(Plugin::FeatureSet &a, const Plugin::FeatureSet &b)
 {
 	for (Plugin::FeatureSet::const_iterator i = b.begin(); i != b.end(); ++i) {
 		int output = i->first;
@@ -12,7 +85,7 @@ void appendFeatures(Plugin::FeatureSet &a, const Plugin::FeatureSet &b)
 		}
 	}
 }
-void destroyTestAudio(float **b, size_t channels)
+void Helper::destroyTestAudio(float **b, size_t channels)
 {
 	for (size_t c = 0; c < channels; ++c) {
 		delete[] b[c];
@@ -20,7 +93,7 @@ void destroyTestAudio(float **b, size_t channels)
 	delete[] b;
 }
 
-float** createTestAudio(size_t channels, size_t blocksize, size_t blocks)
+float** Helper::createTestAudio(size_t channels, size_t blocksize, size_t blocks)
 {
 	float **b = new float *[channels];
 	for (size_t c = 0; c < channels; ++c) {
@@ -37,7 +110,7 @@ float** createTestAudio(size_t channels, size_t blocksize, size_t blocks)
 	return b;
 }
 
-float** loadWaveAudio_mono(string filepath, size_t &channels, size_t blocksize, size_t step, size_t &blocks){
+float** Helper::loadWaveAudio_mono(string filepath, size_t &channels, size_t blocksize, size_t step, size_t &blocks){
 	SndfileHandle file;
 	file = SndfileHandle(filepath);
 	channels = 1;
@@ -51,7 +124,7 @@ float** loadWaveAudio_mono(string filepath, size_t &channels, size_t blocksize, 
 }
 
 
-int process(string wav_file, map<float, pair<string, float>> &output_chords, map<float, pair<string, float>> &output_barseven, map<float, pair<string, float >> &output_barsodd, float &avg_tempo){
+int Helper::process(string wav_file, map<float, pair<string, float>> &output_chords, map<float, pair<string, float>> &output_barseven, map<float, pair<string, float >> &output_barsodd, float &avg_tempo){
 	// Get names of all VAMP Plugins
 	Vamp::HostExt::PluginLoader::PluginKeyList keys =
 		Vamp::HostExt::PluginLoader::getInstance()->listPlugins();

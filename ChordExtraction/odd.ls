@@ -1,4 +1,4 @@
 (meter 3 4)
-(tempo 176.066)
+(tempo 152.127)
 (section (style two-beat))
- Bb6  |  Bb6  |  Em  |  C/Bb  |  E  |  E  |  C  |  C  |  C  |  Am  |  Am  |  G  |  G  | 
+ Dmaj7  |  Dmaj7  |  Gdim7/F  |  /  |  Amaj7  |  G  |  G  |  Bbmaj7  |  Bbmaj7  |  Am7  |  /  | 
