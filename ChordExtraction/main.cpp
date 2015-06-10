@@ -49,14 +49,6 @@ void output(bool even, string outputfile, map<float, pair<string, float>> chords
 					else {
 						str = " " + currentChord + " ";
 					}
-
-					/*if (ratio >= threshold && currentChord != previousChord){
-						bar->second.first = currentChord;
-						previousChord = currentChord;
-					}
-					else
-						bar->second.first = "/";*/
-					//
 				}
 			}
 			++chord;
